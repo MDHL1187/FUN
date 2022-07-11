@@ -1,0 +1,38 @@
+version: '3.5'
+
+services:
+  redis:
+    image: redis:6.2.5-alpine 
+    hostname: redisCacheMaster
+    command: ['redis-server', '/etc/redis/redis.conf']
+    environment:
+      - REDIS_REPLICATION_MODE=master
+      - REDIS_PASSWORD=test123
+      - REDIS_DISABLE_COMMANDS=FLUSHDB,FLUSHALL
+    ports:
+      - '127.0.0.1:6379:6379'
+    expose: 
+      - 6379
+    volumes:
+      - ./redis.conf:/etc/redis/redis.conf
+    container_name: redisCache
+    restart: always
+
+  redis-commander:
+    container_name: redisCacheCommander
+    hostname: redisCacheCommanderMaster
+    image: rediscommander/redis-commander:latest
+    restart: always
+    volumes:
+      - ./redisComm.json:/redis-commander/config/local-production.json
+    ports:
+      - '127.0.0.1:8081:8081'
+    expose: 
+      - 8081
+    depends_on:
+      - redis
+
+volumes:
+  redis_data:
+    driver: local
+
