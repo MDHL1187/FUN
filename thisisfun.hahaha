@@ -1,0 +1,110 @@
+from datetime import date, datetime, timedelta
+from dateutil.relativedelta import relativedelta
+import calendar
+
+def next_weekday(dt, weekday):
+    days = (weekday - dt.weekday() + 7) % 7
+    return dt + timedelta(days=days)
+
+def get_nweek_weekday(dt, nweek, weekdays):
+    c = calendar.Calendar(firstweekday=weekdays)
+    monthcal = c.monthdatescalendar(dt.year,dt.month)
+    return [day for week in monthcal for day in week if day.weekday() == weekdays and day.month == dt.month][2]
+    
+def next_month_nweek_weekday(dt, nweek, weekdays):
+    tt = get_nweek_weekday(dt, nweek, weekdays)
+    if tt < date.today():
+        tt = tt + relativedelta(months=+1)
+        tt = get_nweek_weekday(tt, nweek, weekdays)
+    return tt
+    
+def get_month_fixeddate(dt, day):
+    tt = dt.replace(day=day)
+    if tt < date.today():
+        tt = tt + relativedelta(months=+1)
+    return tt
+    
+def get_next_fixedMonth(dt, month):
+    tt = dt.replace(month=month)
+    if tt < date.today():
+        tt = tt + relativedelta(years=+1)
+    return tt
+
+monthsList = ["jan","feb","mar","apr","may","jun","jul","aug","sep","oct","nov","dec"]
+weekdaysList = ["monday","tuesday","wednesday","thursday","friday","saturday","sunday"]
+nweeksList = ["week1","week2","week3","week4"]
+
+def handleAnnualFrequency(tokens):
+    arg = tokens[1].lower()
+    if arg in monthsList:
+        months = monthsList.index(arg) + 1
+        arg = tokens[2].lower()
+        match arg:
+            case arg if arg in nweeksList:
+                return get_nweek_weekday(get_next_fixedMonth(d, months), nweeksList.index(arg), weekdaysList.index(tokens[3].lower()))
+            case _:
+                return get_next_fixedMonth(get_month_fixeddate(d, int(arg)), months)
+        
+
+def handleMonthFrequency(tokens):
+    arg = tokens[1].lower()
+    match arg:
+        case arg if arg in nweeksList:
+            return next_month_nweek_weekday(d, nweeksList.index(arg), weekdaysList.index(tokens[2].lower()))
+        case _:
+            return get_month_fixeddate(d, int(arg))
+
+def handleWeekFrequency(tokens):
+    arg = weekdaysList.index(tokens[1].lower())
+    return next_weekday(d, arg)
+
+def calculateFrequencyDate(input):
+    tokens = input.split("_")
+    if len(tokens) > 1:
+        match tokens[0].lower():
+            case "annually":
+                return handleAnnualFrequency(tokens)
+            case "monthly":
+                return handleMonthFrequency(tokens)
+            case "weekly":
+                return handleWeekFrequency(tokens)
+    
+
+
+d = date.today()
+
+# Weekly_Wednesday
+print(next_weekday(d, calendar.MONDAY))
+
+# Weekly_Friday
+print(next_weekday(d, calendar.FRIDAY))
+
+# Monthly_Week3_Monday
+print(next_month_nweek_weekday(d, 3, calendar.MONDAY))
+
+# Monthly_10
+print(get_month_fixeddate(d, 10))
+
+# Monthly_28
+print(get_month_fixeddate(d, 28))
+
+# Annually_Jan_Week3_Tuesday
+print(get_nweek_weekday(get_next_fixedMonth(d, 1), 3, calendar.TUESDAY))
+
+# Annually_Jan_30
+print(get_next_fixedMonth(get_month_fixeddate(d, 30), 1))
+
+# Annually_Dec_30
+print(get_next_fixedMonth(get_month_fixeddate(d, 30), 12))
+
+print("---------------")
+print("Weekly_Monday => " + calculateFrequencyDate("Weekly_Monday").strftime('%Y-%m-%d'))
+print("Weekly_Friday => " + calculateFrequencyDate("Weekly_Friday").strftime('%Y-%m-%d'))
+print("Monthly_Week3_Monday => " + calculateFrequencyDate("Monthly_Week3_Monday").strftime('%Y-%m-%d'))
+print("Monthly_10 => " + calculateFrequencyDate("Monthly_10").strftime('%Y-%m-%d'))
+print("Monthly_28 => " + calculateFrequencyDate("Monthly_28").strftime('%Y-%m-%d'))
+print("Annually_Jan_Week3_Tuesday => " + calculateFrequencyDate("Annually_Jan_Week3_Tuesday").strftime('%Y-%m-%d'))
+print("Annually_Jan_30 => " + calculateFrequencyDate("Annually_Jan_30").strftime('%Y-%m-%d'))
+print("Annually_Dec_30 => " + calculateFrequencyDate("Annually_Dec_30").strftime('%Y-%m-%d'))
+
+
